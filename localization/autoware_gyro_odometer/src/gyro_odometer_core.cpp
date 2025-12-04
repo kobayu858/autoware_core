@@ -57,9 +57,11 @@ GyroOdometerNode::GyroOdometerNode(const rclcpp::NodeOptions & node_options)
     "vehicle/twist_with_covariance", rclcpp::QoS{100},
     std::bind(&GyroOdometerNode::callback_vehicle_twist, this, std::placeholders::_1));
 
-  imu_sub_ = create_subscription<sensor_msgs::msg::Imu>(
-    "imu", rclcpp::QoS{100},
-    std::bind(&GyroOdometerNode::callback_imu, this, std::placeholders::_1));
+  AUTOWARE_SUBSCRIPTION_OPTIONS sub_options;
+
+  imu_sub_ = AUTOWARE_CREATE_SUBSCRIPTION(
+    sensor_msgs::msg::Imu, "imu", rclcpp::QoS(10),  // agnocast upper
+    std::bind(&GyroOdometerNode::callback_imu, this, std::placeholders::_1), sub_options);
 
   twist_raw_pub_ = create_publisher<geometry_msgs::msg::TwistStamped>("twist_raw", rclcpp::QoS{10});
   twist_with_covariance_raw_pub_ = create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>(
@@ -86,9 +88,12 @@ void GyroOdometerNode::callback_vehicle_twist(
   concat_gyro_and_odometer();
 }
 
-void GyroOdometerNode::callback_imu(const sensor_msgs::msg::Imu::ConstSharedPtr imu_msg_ptr)
+void GyroOdometerNode::callback_imu(
+  const AUTOWARE_MESSAGE_SHARED_PTR(sensor_msgs::msg::Imu) imu_msg_ptr)
 {
   imu_arrived_ = true;
+  RCLCPP_INFO_THROTTLE(
+    this->get_logger(), *this->get_clock(), 1000, "[AGNOCAST DEBUG] SUB CALLBACK");
   latest_imu_ros_time_ = imu_msg_ptr->header.stamp;
   gyro_queue_.push_back(*imu_msg_ptr);
   concat_gyro_and_odometer();

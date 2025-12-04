@@ -1,27 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <launch>
   <arg name="input_vehicle_twist_with_covariance_topic" default="/sensing/vehicle_velocity_converter/twist_with_covariance" description="input twist with covariance topic name from vehicle"/>
-
   <arg name="input_imu_topic" default="/sensing/imu/imu_data" description="input imu topic name"/>
-
   <arg name="output_twist_raw_topic" default="gyro_twist_raw" description="output raw twist topic name"/>
   <arg name="output_twist_with_covariance_raw_topic" default="gyro_twist_with_covariance_raw" description="output raw twist with covariance topic name"/>
-
   <arg name="output_twist_topic" default="gyro_twist" description="output twist topic name"/>
   <arg name="output_twist_with_covariance_topic" default="gyro_twist_with_covariance" description="output twist with covariance topic name"/>
-
   <arg name="config_file" default="$(find-pkg-share autoware_gyro_odometer)/config/gyro_odometer.param.yaml"/>
 
-  <node pkg="autoware_gyro_odometer" exec="autoware_gyro_odometer_node" output="both">
-    <remap from="vehicle/twist_with_covariance" to="$(var input_vehicle_twist_with_covariance_topic)"/>
+  <!-- Agnocast設定 -->
+  <let name="use_agnocast" value="true"/>
+  <let name="agnocast_heaphook_path" value="$(find-pkg-prefix agnocastlib)/lib/libagnocast_heaphook.so"/>
 
-    <remap from="imu" to="$(var input_imu_topic)"/>
+  <let name="ld_preload_value" value="$(var agnocast_heaphook_path):$(env LD_PRELOAD '')" if="$(var use_agnocast)"/>
+  <let name="ld_preload_value" value="$(env LD_PRELOAD '')" unless="$(var use_agnocast)"/>
 
-    <remap from="twist_raw" to="$(var output_twist_raw_topic)"/>
-    <remap from="twist_with_covariance_raw" to="$(var output_twist_with_covariance_raw_topic)"/>
+  <let name="enable_agnocast_val" value="1" if="$(var use_agnocast)"/>
+  <let name="enable_agnocast_val" value="0" unless="$(var use_agnocast)"/>
 
-    <remap from="twist" to="$(var output_twist_topic)"/>
-    <remap from="twist_with_covariance" to="$(var output_twist_with_covariance_topic)"/>
+  <!-- Agnocast Component Container -->
+  <node_container pkg="agnocastlib" exec="agnocast_component_container" name="gyro_odometer_container" namespace="" output="screen">
+    <!-- 環境変数設定 -->
+    <env name="LD_PRELOAD" value="$(var ld_preload_value)"/>
+    <env name="AGNOCAST_MEMPOOL_SIZE" value="536870912"/>
+    <env name="ENABLE_AGNOCAST" value="$(var enable_agnocast_val)"/>
 
-    <param from="$(var config_file)"/>
-  </node>
+    <!-- Container parameters -->
+    <param name="number_of_ros2_threads" value="2"/>
+    <param name="number_of_agnocast_threads" value="2"/>
+    <param name="yield_before_execute" value="false"/>
+    <param name="ros2_next_exec_timeout_ms" value="-1"/>
+    <param name="agnocast_next_exec_timeout_ms" value="50"/>
+
+    <!-- Composable Node -->
+    <composable_node pkg="autoware_gyro_odometer" plugin="autoware::gyro_odometer::GyroOdometerNode" name="gyro_odometer">
+      <remap from="vehicle/twist_with_covariance" to="$(var input_vehicle_twist_with_covariance_topic)"/>
+      <remap from="imu" to="$(var input_imu_topic)"/>
+      <remap from="twist_raw" to="$(var output_twist_raw_topic)"/>
+      <remap from="twist_with_covariance_raw" to="$(var output_twist_with_covariance_raw_topic)"/>
+      <remap from="twist" to="$(var output_twist_topic)"/>
+      <remap from="twist_with_covariance" to="$(var output_twist_with_covariance_topic)"/>
+      <param from="$(var config_file)"/>
+      <extra_arg name="use_intra_process_comms" value="true"/>
+    </composable_node>
+  </node_container>
 </launch>

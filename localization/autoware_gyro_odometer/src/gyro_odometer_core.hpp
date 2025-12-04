@@ -15,6 +15,7 @@
 #ifndef GYRO_ODOMETER_CORE_HPP_
 #define GYRO_ODOMETER_CORE_HPP_
 
+#include <autoware/agnocast_wrapper/autoware_agnocast_wrapper.hpp>
 #include <autoware_utils_diagnostics/diagnostics_interface.hpp>
 #include <autoware_utils_geometry/msg/covariance.hpp>
 #include <autoware_utils_logging/logger_level_configure.hpp>
@@ -45,14 +46,16 @@ public:
 private:
   void callback_vehicle_twist(
     const geometry_msgs::msg::TwistWithCovarianceStamped::ConstSharedPtr vehicle_twist_msg_ptr);
-  void callback_imu(const sensor_msgs::msg::Imu::ConstSharedPtr imu_msg_ptr);
+  // void callback_imu(const sensor_msgs::msg::Imu::ConstSharedPtr imu_msg_ptr);
+  void callback_imu(const AUTOWARE_MESSAGE_SHARED_PTR(sensor_msgs::msg::Imu) imu_msg_ptr);
   void concat_gyro_and_odometer();
   void publish_data(const geometry_msgs::msg::TwistWithCovarianceStamped & twist_with_cov_raw);
   void publish_diagnostics();
 
   rclcpp::Subscription<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr
     vehicle_twist_sub_;
-  rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
+  // rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
+  AUTOWARE_SUBSCRIPTION_PTR(sensor_msgs::msg::Imu) imu_sub_;
 
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_raw_pub_;
   rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr
