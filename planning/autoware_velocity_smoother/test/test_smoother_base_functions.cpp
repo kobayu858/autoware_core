@@ -20,7 +20,6 @@
 
 #include <gtest/gtest.h>
 
-#include <cstdlib>
 #include <limits>
 #include <memory>
 #include <string>
@@ -35,11 +34,6 @@ class TestSmootherBase : public ::testing::Test
 protected:
   void SetUp() override
   {
-    const auto * const enable_agnocast = std::getenv("ENABLE_AGNOCAST");
-    if (enable_agnocast != nullptr && std::string(enable_agnocast) == "1") {
-      GTEST_SKIP() << "This test launches a node and is skipped under ENABLE_AGNOCAST=1";
-    }
-
     rclcpp::init(0, nullptr);
     auto node_options = rclcpp::NodeOptions{};
     node_options.append_parameter_override("algorithm_type", "JerkFiltered");

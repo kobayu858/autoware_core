@@ -20,19 +20,9 @@
 
 #include <gtest/gtest.h>
 
-#include <cstdlib>
 #include <memory>
 #include <string>
 #include <vector>
-
-namespace
-{
-bool isAgnocastEnabled()
-{
-  const auto * const enable_agnocast = std::getenv("ENABLE_AGNOCAST");
-  return enable_agnocast != nullptr && std::string(enable_agnocast) == "1";
-}
-}  // namespace
 
 // Define topic names as constants
 static const char INPUT_TRAJECTORY_TOPIC[] = "velocity_smoother/input/trajectory";
@@ -91,10 +81,6 @@ void publishMandatoryTopics(
 
 TEST(PlanningModuleInterfaceTest, testPlanningInterfaceWithVariousTrajectoryInput)
 {
-  if (isAgnocastEnabled()) {
-    GTEST_SKIP() << "This test launches a node and is skipped under ENABLE_AGNOCAST=1";
-  }
-
   rclcpp::init(0, nullptr);
   auto test_manager = generateTestManager();
   auto test_target_node = generateNode();
@@ -115,10 +101,6 @@ TEST(PlanningModuleInterfaceTest, testPlanningInterfaceWithVariousTrajectoryInpu
 
 TEST(PlanningModuleInterfaceTest, NodeTestWithOffTrackEgoPose)
 {
-  if (isAgnocastEnabled()) {
-    GTEST_SKIP() << "This test launches a node and is skipped under ENABLE_AGNOCAST=1";
-  }
-
   rclcpp::init(0, nullptr);
   auto test_manager = generateTestManager();
   auto test_target_node = generateNode();
